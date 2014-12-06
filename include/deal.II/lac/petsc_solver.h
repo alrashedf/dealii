@@ -135,7 +135,7 @@ namespace PETScWrappers
      * preconditioner for performance
      * reasons. See class Documentation.
      */
-    void
+    virtual void
     solve (const MatrixBase         &A,
            VectorBase               &x,
            const VectorBase         &b,
@@ -1170,7 +1170,23 @@ namespace PETScWrappers
      * the solver.
      */
     struct AdditionalData
-    {};
+    {
+      /**
+       * Constructor. By default,
+       * set symmetric matrix to false.
+       */
+      AdditionalData (const bool symmetric = false);
+
+      /**
+       * Flag specifies whether matrix
+       * being factorized is symmetric
+       * or not. It influences the type
+       * of the used preconditioner
+       * (PCLU or PCCHOLESKY)
+       */
+      bool symmetric;
+    };
+
     /**
      * Constructor
      */
@@ -1182,9 +1198,23 @@ namespace PETScWrappers
      * The method to solve the
      * linear system.
      */
-    void solve (const MatrixBase &A,
-                VectorBase       &x,
-                const VectorBase &b);
+    void
+    solve (const MatrixBase &A,
+            VectorBase       &x,
+            const VectorBase &b);
+
+    /**
+     * The method to solve the
+     * linear system. This interface is implemented
+     * to maintain a consistent interface like the other
+     * Solvers in this namespace. However, the
+     * preconditioner will be ignored.
+     */
+    void
+    solve (const MatrixBase         &A,
+           VectorBase               &x,
+           const VectorBase         &b,
+           const PreconditionerBase &preconditioner);
 
     /**
     * The method allows to take advantage
@@ -1194,14 +1224,15 @@ namespace PETScWrappers
     * indicates whether the matrix is
     * symmetric or not.
     */
-    void set_symmetric_mode (const bool flag);
+    void set_symmetric_mode (const bool flag) DEAL_II_DEPRECATED;
 
   protected:
     /**
      * Store a copy of flags for this
      * particular solver.
      */
-    const AdditionalData additional_data;
+    // should be converted to const once set_symmetric_mode() is no longer in use
+    /*const*/ AdditionalData additional_data;
 
     virtual void set_solver_type (KSP &ksp) const;
 
@@ -1242,15 +1273,6 @@ namespace PETScWrappers
     };
 
     std_cxx11::shared_ptr<SolverDataMUMPS> solver_data;
-
-    /**
-     * Flag specifies whether matrix
-     * being factorized is symmetric
-     * or not. It influences the type
-     * of the used preconditioner
-     * (PCLU or PCCHOLESKY)
-     */
-    bool symmetric_mode;
   };
 }
 
