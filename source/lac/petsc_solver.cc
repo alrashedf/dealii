@@ -605,6 +605,14 @@ namespace PETScWrappers
 
   /* ---------------------- SparseDirectMUMPS------------------------ */
 
+  SparseDirectMUMPS::AdditionalData::
+  AdditionalData (const bool symmetric)
+    :
+    symmetric (symmetric)
+  {}
+
+
+
   SparseDirectMUMPS::SolverDataMUMPS::~SolverDataMUMPS ()
   {
     // destroy the solver object
@@ -623,8 +631,7 @@ namespace PETScWrappers
                                         const AdditionalData &data)
     :
     SolverBase (cn, mpi_communicator),
-    additional_data (data),
-    symmetric_mode(false)
+    additional_data (data)
   {}
 
 
@@ -653,6 +660,16 @@ namespace PETScWrappers
      * produce some error messages.
      */
     KSPSetInitialGuessNonzero (ksp, PETSC_FALSE);
+  }
+
+  void
+  SparseDirectMUMPS::solve (const MatrixBase         &A,
+                              VectorBase               &x,
+                              const VectorBase         &b,
+                              const PreconditionerBase &preconditioner)
+  {
+    // ignore the preconditioner.
+    solve(A, x, b);
   }
 
   void
@@ -724,7 +741,7 @@ namespace PETScWrappers
          * build PETSc PC for particular PCLU or PCCHOLESKY preconditioner
          * depending on whether the symmetric mode has been set
          */
-        if (symmetric_mode)
+        if (additional_data.symmetric)
           ierr = PCSetType (solver_data->pc, PCCHOLESKY);
         else
           ierr = PCSetType (solver_data->pc, PCLU);
@@ -864,7 +881,7 @@ namespace PETScWrappers
   void
   SparseDirectMUMPS::set_symmetric_mode(const bool flag)
   {
-    symmetric_mode = flag;
+    Assert(false, ExcMessage("Use AdditionalData instead of this function"));
   }
 
 }
