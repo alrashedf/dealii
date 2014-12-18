@@ -680,6 +680,23 @@ void TableHandler::clear()
 }
 
 
+
+void TableHandler::clear_current_row ()
+{
+  // Figure out what is the currect (max) length of the columns
+  // so that we "shave" one off.
+  unsigned int n = 0;
+  for (std::map< std::string, Column >::iterator p = columns.begin(); p != columns.end(); ++p)
+    n = (n >= p->second.entries.size() ? n : p->second.entries.size());
+
+  // shave the top most element
+  if (n != 0)
+    for (std::map< std::string, Column >::iterator p = columns.begin(); p != columns.end(); ++p)
+      if (p->second.entries.size() == n)
+        p->second.entries.pop_back();
+}
+
+
 unsigned int TableHandler::n_rows() const
 {
   if (columns.size() == 0)

@@ -380,6 +380,14 @@ public:
                                   const std::string &superkey);
 
   /**
+   * Removes the most recent added values.
+   * This is useful when, for example, a time-step
+   * is rejected and all data recorded about is
+   * discarded.
+   */
+  void clear_current_row ();
+
+  /**
    * Change the order of columns and
    * supercolumns in the table.
    *
