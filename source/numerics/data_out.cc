@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 1999 - 2013 by the deal.II authors
+// Copyright (C) 1999 - 2014 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -460,7 +460,7 @@ void DataOut<dim,DH>::build_patches (const Mapping<DH::dimension,DH::space_dimen
                      // about 10% improvement) and the items in flight at any
                      // given time (another 5% on the testcase discussed in
                      // @ref workstream_paper, on 32 cores) and if
-                     8*multithread_info.n_threads(),
+                     8*MultithreadInfo::n_threads(),
                      64);
 }
 

@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 1999 - 2013 by the deal.II authors
+// Copyright (C) 1999 - 2015 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -35,41 +35,24 @@ SparseILU<number>::SparseILU ()
 
 
 template <typename number>
-SparseILU<number>::SparseILU (const SparsityPattern &sparsity)
-{
-  SparseMatrix<number>::reinit(sparsity);
-}
-
-
-
-
-template <typename number>
 template <typename somenumber>
 void SparseILU<number>::initialize (const SparseMatrix<somenumber> &matrix,
                                     const AdditionalData &data)
 {
   SparseLUDecomposition<number>::initialize(matrix, data);
 
-  decompose(matrix, data.strengthen_diagonal);
-}
-
-
-
-template <typename number>
-template <typename somenumber>
-void SparseILU<number>::decompose (const SparseMatrix<somenumber> &matrix,
-                                   const double strengthen_diagonal)
-{
   Assert (matrix.m()==matrix.n(), ExcNotQuadratic ());
   Assert (this->m()==this->n(),   ExcNotQuadratic ());
   Assert (matrix.m()==this->m(),  ExcDimensionMismatch(matrix.m(), this->m()));
 
-  Assert (strengthen_diagonal>=0,
-          ExcInvalidStrengthening (strengthen_diagonal));
+  Assert (data.strengthen_diagonal>=0,
+          ExcInvalidStrengthening (data.strengthen_diagonal));
 
-  SparseLUDecomposition<number>::decompose (matrix, strengthen_diagonal);
+  this->strengthen_diagonal = data.strengthen_diagonal;
+  this->prebuild_lower_bound ();
+  this->copy_from (matrix);
 
-  if (strengthen_diagonal>0)
+  if (data.strengthen_diagonal>0)
     this->strengthen_diagonal_impl();
 
   // in the following, we implement algorithm 10.4 in the book by Saad by
@@ -151,7 +134,6 @@ label_200:
         iw[ja[j]] = numbers::invalid_size_type;
     }
 }
-
 
 
 

@@ -664,9 +664,9 @@ namespace PETScWrappers
 
   void
   SparseDirectMUMPS::solve (const MatrixBase         &A,
-                              VectorBase               &x,
-                              const VectorBase         &b,
-                              const PreconditionerBase &preconditioner)
+                            VectorBase               &x,
+                            const VectorBase         &b,
+                            const PreconditionerBase &preconditioner)
   {
     // ignore the preconditioner.
     solve(A, x, b);
