@@ -179,43 +179,6 @@ ChunkSparsityPattern::compress ()
 
 
 
-namespace internal
-{
-  namespace
-  {
-    /**
-     * Declare type for container size.
-     */
-    typedef types::global_dof_index size_type;
-
-    // distinguish between compressed sparsity types that define row_begin()
-    // and SparsityPattern that uses begin() as iterator type
-    template <typename Sparsity>
-    void copy_row (const Sparsity                  &csp,
-                   const size_type                  row,
-                   const unsigned int               chunk_size,
-                   CompressedSimpleSparsityPattern &dst)
-    {
-      typename Sparsity::row_iterator col_num = csp.row_begin (row);
-      const size_type reduced_row = row/chunk_size;
-      for (; col_num != csp.row_end (row); ++col_num)
-        dst.add (reduced_row, *col_num/chunk_size);
-    }
-
-    void copy_row (const SparsityPattern           &csp,
-                   const size_type                  row,
-                   const unsigned int               chunk_size,
-                   CompressedSimpleSparsityPattern &dst)
-    {
-      SparsityPattern::iterator col_num = csp.begin (row);
-      const size_type reduced_row = row/chunk_size;
-      for (; col_num != csp.end (row); ++col_num)
-        dst.add (reduced_row, col_num->column()/chunk_size);
-    }
-  }
-}
-
-
 template <typename SparsityType>
 void
 ChunkSparsityPattern::copy_from (const SparsityType &csp,
@@ -226,7 +189,7 @@ ChunkSparsityPattern::copy_from (const SparsityType &csp,
   rows = csp.n_rows();
   cols = csp.n_cols();
 
-  // simple case: just use the other sparsity pattern
+  // simple case: just use the given sparsity pattern
   if (chunk_size == 1)
     {
       sparsity_pattern.copy_from (csp);
@@ -238,10 +201,15 @@ ChunkSparsityPattern::copy_from (const SparsityType &csp,
   // sparsity pattern
   const size_type m_chunks = (csp.n_rows()+chunk_size-1) / chunk_size,
                   n_chunks = (csp.n_cols()+chunk_size-1) / chunk_size;
-  CompressedSimpleSparsityPattern temporary_sp(m_chunks, n_chunks);
+  DynamicSparsityPattern temporary_sp(m_chunks, n_chunks);
 
   for (size_type row = 0; row<csp.n_rows(); ++row)
-    internal::copy_row(csp, row, chunk_size, temporary_sp);
+    {
+      typename SparsityType::row_iterator col_num = csp.row_begin (row);
+      const size_type reduced_row = row/chunk_size;
+      for (; col_num != csp.row_end (row); ++col_num)
+        temporary_sp.add (reduced_row, *col_num/chunk_size);
+    }
 
   sparsity_pattern.copy_from (temporary_sp);
 }
@@ -645,13 +613,7 @@ ChunkSparsityPattern::memory_consumption () const
 
 // explicit instantiations
 template
-void ChunkSparsityPattern::copy_from<CompressedSparsityPattern> (const CompressedSparsityPattern &,
-    const size_type);
-template
-void ChunkSparsityPattern::copy_from<CompressedSetSparsityPattern> (const CompressedSetSparsityPattern &,
-    const size_type);
-template
-void ChunkSparsityPattern::copy_from<CompressedSimpleSparsityPattern> (const CompressedSimpleSparsityPattern &,
+void ChunkSparsityPattern::copy_from<DynamicSparsityPattern> (const DynamicSparsityPattern &,
     const size_type);
 template
 void ChunkSparsityPattern::create_from<SparsityPattern>
@@ -661,24 +623,10 @@ void ChunkSparsityPattern::create_from<SparsityPattern>
  const unsigned int,
  const bool);
 template
-void ChunkSparsityPattern::create_from<CompressedSparsityPattern>
+void ChunkSparsityPattern::create_from<DynamicSparsityPattern>
 (const unsigned int,
  const unsigned int,
  const CompressedSparsityPattern &,
- const unsigned int,
- const bool);
-template
-void ChunkSparsityPattern::create_from<CompressedSetSparsityPattern>
-(const unsigned int,
- const unsigned int,
- const CompressedSetSparsityPattern &,
- const unsigned int,
- const bool);
-template
-void ChunkSparsityPattern::create_from<CompressedSimpleSparsityPattern>
-(const unsigned int,
- const unsigned int,
- const CompressedSimpleSparsityPattern &,
  const unsigned int,
  const bool);
 template

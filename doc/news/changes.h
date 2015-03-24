@@ -38,6 +38,18 @@ inconvenience this causes.
 </p>
 
 <ol>
+  <li> Changed: The TrilinosWrappers::SparseMatrix::clear_row() function used
+  to call TrilinosWrappers::SparseMatrix::compress() before doing its work,
+  but this is neither efficient nor safe. You will now have to do this
+  yourself after assembling a matrix and before clearing rows.
+  <br>
+  The changes to the function above also affect the
+  MatrixTools::apply_boundary_values() variants that operate on Trilinos
+  matrices.
+  <br>
+  (Wolfgang Bangerth, 2015/03/09)
+  </li>
+
   <li> Changed: Implicit conversion from Tensor@<1,dim@> to Point@<dim@> was
   previously possible. This has now been prohibited (but you can still
   do the conversion with an explicit cast) as such conversions are
@@ -313,6 +325,38 @@ inconvenience this causes.
 
 
 <ol>
+
+  <li> New: A new flag no_automatic_repartitioning in
+  parallel::distributed::Triangulation will disable the automatic
+  repartitioning when calling execute_coarsening_and_refinement() (or things
+  like refine_global(), ...), resulting in all cells staying on the processor
+  they were before. The new function repartition() will execute the
+  repartitioning as done automatically before.
+  <br>
+  (Timo Heister, 2015/03/22)
+  </li>
+
+  <li> Changed: All (Block)Compressed*SparsityPattern classes got
+  replaced by DynamicSparsityPattern and
+  BlockDynamicSparsityPattern, respectively and all examples now
+  teach the dynamic way of creating dynamic sparsity patterns.
+  <br>
+  (Timo Heister, 2015/03/22)
+  </li>
+
+  <li> Improved: We have traditionally had a large number of exceptions
+  that did not output any useful error message other than the name
+  of the exception class. This name was suggestive of the error that
+  had happened, but did not convey a sufficient amount of information
+  to what happened in many of the places where these kinds of exceptions
+  were used, nor what may have caused the exception, or how it could
+  be avoided. We have gone through many of these places and changed
+  the exception to be much more verbose in what they state about the
+  problem, its origin, and how it may be solved.
+  <br>
+  (Wolfgang Bangerth, 2015/02/28-2015/03/31)
+  </li>
+
   <li> Changed: We have traditionally used Point@<dim@> to represent points
   in physical space, i.e., vectors that are anchored at the origin, whereas
   for vectors anchored elsewhere (e.g., differences between points, normal
@@ -351,6 +395,29 @@ inconvenience this causes.
 <h3>Specific improvements</h3>
 
 <ol>
+  <li> New: GridGenerator::create_triangulation_with_removed_cells() creates
+  a new mesh out of an existing one by dropping individual cells.
+  <br>
+  (Wolfgang Bangerth, 2015/03/13)
+  </li>
+
+  <li> New: Add MueLu preconditioner from Trilinos through the class
+  TrilinosWrappers::PreconditionAMGMueLu. This is a new algebraic
+  multigrid package. The input parameters are almost the same as the ones
+  from ML so that the two preconditioners can be easily swapped.
+  <br>
+  (Bruno Turcksin, 2015/03/11)
+  </li>
+
+  <li> Fixed: Iterating over the elements of a TrilinosWrappers::SparseMatrix
+  object previously led to errors if the matrix was in fact stored in
+  parallel across multiple MPI processes. This is now fixed: rows not
+  stored locally on the processor where you run the iteration simply look
+  like they're empty.
+  <br>
+  (Wolfgang Bangerth, 2015/03/08)
+  </li>
+
   <li> New: There is now a new macro DeclExceptionMsg that allows to
   declare an exception that does not take any run-time arguments
   yet still allows to specify an error message.
@@ -480,7 +547,7 @@ inconvenience this causes.
   (Wolfgang Bangerth, 2015/01/16)
   </li>
 
-  <li> New: dealii::multithread_info.n_cpus returns the correct number of CPU 
+  <li> New: dealii::multithread_info.n_cpus returns the correct number of CPU
   on FreeBSD.
   <br>
   (Bruno Turcksin, 2015/01/14)

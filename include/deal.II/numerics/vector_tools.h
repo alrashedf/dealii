@@ -2191,24 +2191,21 @@ namespace VectorTools
 
 
   /**
-   * Exception.
+   * Exception
    */
-  DeclException0(ExcInvalidMaterialIndicator);
+  DeclExceptionMsg (ExcNonInterpolatingFE,
+                    "You are attempting an operation that requires the "
+                    "finite element involved to be 'interpolating', i.e., "
+                    "it needs to have support points. The finite element "
+                    "you are using here does not appear to have those.");
 
   /**
    * Exception
    */
-  DeclException0 (ExcInvalidBoundaryIndicator);
-
-  /**
-   * Exception
-   */
-  DeclException0 (ExcNonInterpolatingFE);
-
-  /**
-   * Exception
-   */
-  DeclException0 (ExcPointNotAvailableHere);
+  DeclExceptionMsg (ExcPointNotAvailableHere,
+                    "The given point is inside a cell of a "
+                    "parallel::distributed::Triangulation that is not "
+                    "locally owned by this processor.");
 }
 
 

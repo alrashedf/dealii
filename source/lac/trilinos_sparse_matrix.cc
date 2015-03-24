@@ -21,9 +21,7 @@
 #  include <deal.II/lac/sparse_matrix.h>
 #  include <deal.II/lac/trilinos_sparsity_pattern.h>
 #  include <deal.II/lac/sparsity_pattern.h>
-#  include <deal.II/lac/compressed_sparsity_pattern.h>
-#  include <deal.II/lac/compressed_set_sparsity_pattern.h>
-#  include <deal.II/lac/compressed_simple_sparsity_pattern.h>
+#  include <deal.II/lac/dynamic_sparsity_pattern.h>
 #  include <deal.II/lac/sparsity_tools.h>
 
 #  include <Epetra_Export.h>
@@ -114,11 +112,15 @@ namespace TrilinosWrappers
     void
     AccessorBase::visit_present_row ()
     {
-      // if we are asked to visit the
-      // past-the-end line, then simply
-      // release all our caches and go on
-      // with life
-      if (this->a_row == matrix->m())
+      // if we are asked to visit the past-the-end line, then simply
+      // release all our caches and go on with life.
+      //
+      // do the same if the row we're supposed to visit is not locally
+      // owned. this is simply going to make non-locally owned rows
+      // look like they're empty
+      if ((this->a_row == matrix->m())
+          ||
+          (matrix->in_local_range (this->a_row) == false))
         {
           colnum_cache.reset ();
           value_cache.reset ();
@@ -126,11 +128,7 @@ namespace TrilinosWrappers
           return;
         }
 
-      // otherwise first flush Trilinos caches
-      matrix->compress ();
-
-      // get a representation of the present
-      // row
+      // get a representation of the present row
       int ncols;
       TrilinosWrappers::types::int_type colnums = matrix->n();
       if (value_cache.get() == 0)
@@ -365,7 +363,7 @@ namespace TrilinosWrappers
   {
     Assert(sparsity_pattern.trilinos_sparsity_pattern().Filled() == true,
            ExcMessage("The Trilinos sparsity pattern has not been compressed."));
-    compress();
+    compress(VectorOperation::insert);
   }
 
 
@@ -605,7 +603,7 @@ namespace TrilinosWrappers
 
     // In the end, the matrix needs to be compressed in order to be really
     // ready.
-    compress();
+    compress(VectorOperation::insert);
   }
 
 
@@ -616,7 +614,7 @@ namespace TrilinosWrappers
   void
   SparseMatrix::reinit (const Epetra_Map    &input_row_map,
                         const Epetra_Map    &input_col_map,
-                        const CompressedSimpleSparsityPattern &sparsity_pattern,
+                        const DynamicSparsityPattern &sparsity_pattern,
                         const bool           exchange_data)
   {
     matrix.reset();
@@ -765,7 +763,7 @@ namespace TrilinosWrappers
 
     // In the end, the matrix needs to be compressed in order to be really
     // ready.
-    compress();
+    compress(VectorOperation::insert);
   }
 
 
@@ -788,8 +786,8 @@ namespace TrilinosWrappers
     else
       nonlocal_matrix.reset ();
 
-    compress();
     last_action = Zero;
+    compress(VectorOperation::insert);
   }
 
 
@@ -805,13 +803,15 @@ namespace TrilinosWrappers
     nonlocal_matrix_exporter.reset();
     matrix.reset (new Epetra_FECrsMatrix
                   (Copy, sparse_matrix.trilinos_sparsity_pattern(), false));
+
     if (sparse_matrix.nonlocal_matrix != 0)
       nonlocal_matrix.reset (new Epetra_CrsMatrix
                              (Copy, sparse_matrix.nonlocal_matrix->Graph()));
     else
       nonlocal_matrix.reset();
 
-    compress();
+    last_action = Zero;
+    compress(VectorOperation::insert);
   }
 
 
@@ -951,7 +951,7 @@ namespace TrilinosWrappers
                &values[0], false);
         }
 
-    compress();
+    compress(VectorOperation::insert);
   }
 
 
@@ -985,7 +985,7 @@ namespace TrilinosWrappers
                      my_nonzeros*sizeof (TrilinosScalar));
       }
 
-    compress();
+    compress(VectorOperation::insert);
   }
 
 
@@ -1009,7 +1009,7 @@ namespace TrilinosWrappers
           ((last_action == Add) && (operation!=::dealii::VectorOperation::insert))
           ||
           ((last_action == Insert) && (operation!=::dealii::VectorOperation::add)),
-          ExcMessage("operation and argument to compress() do not match"));
+          ExcMessage("Operation and argument to compress() do not match"));
       }
 
     // flush buffers
@@ -1102,16 +1102,8 @@ namespace TrilinosWrappers
   SparseMatrix::clear_rows (const std::vector<size_type> &rows,
                             const TrilinosScalar          new_diag_value)
   {
-    compress();
     for (size_type row=0; row<rows.size(); ++row)
       clear_row(rows[row], new_diag_value);
-
-    // This function needs to be called
-    // on all processors. We change some
-    // data, so we need to flush the
-    // buffers to make sure that the
-    // right data is used.
-    compress();
   }
 
 
@@ -1441,7 +1433,7 @@ namespace TrilinosWrappers
                                     GID, values[j]);
 #endif
             }
-          transposed_mat.compress();
+          transposed_mat.compress(VectorOperation::insert);
           ML_Operator_WrapEpetraCrsMatrix
           (const_cast<Epetra_CrsMatrix *>(&transposed_mat.trilinos_matrix()),
            A_,false);
@@ -1716,12 +1708,9 @@ namespace TrilinosWrappers
 {
   template void
   SparseMatrix::reinit (const dealii::SparsityPattern &);
+
   template void
-  SparseMatrix::reinit (const CompressedSparsityPattern &);
-  template void
-  SparseMatrix::reinit (const CompressedSetSparsityPattern &);
-  template void
-  SparseMatrix::reinit (const CompressedSimpleSparsityPattern &);
+  SparseMatrix::reinit (const DynamicSparsityPattern &);
 
   template void
   SparseMatrix::reinit (const Epetra_Map &,
@@ -1729,15 +1718,7 @@ namespace TrilinosWrappers
                         const bool);
   template void
   SparseMatrix::reinit (const Epetra_Map &,
-                        const CompressedSparsityPattern &,
-                        const bool);
-  template void
-  SparseMatrix::reinit (const Epetra_Map &,
-                        const CompressedSetSparsityPattern &,
-                        const bool);
-  template void
-  SparseMatrix::reinit (const Epetra_Map &,
-                        const CompressedSimpleSparsityPattern &,
+                        const DynamicSparsityPattern &,
                         const bool);
 
 
@@ -1746,15 +1727,11 @@ namespace TrilinosWrappers
                         const Epetra_Map &,
                         const dealii::SparsityPattern &,
                         const bool);
+
   template void
   SparseMatrix::reinit (const Epetra_Map &,
                         const Epetra_Map &,
-                        const CompressedSparsityPattern &,
-                        const bool);
-  template void
-  SparseMatrix::reinit (const Epetra_Map &,
-                        const Epetra_Map &,
-                        const CompressedSetSparsityPattern &,
+                        const DynamicSparsityPattern &,
                         const bool);
 
 }

@@ -3397,6 +3397,12 @@ namespace GridGenerator
     Assert (GridTools::have_same_coarse_mesh (triangulation_1, triangulation_2),
             ExcMessage ("The two input triangulations are not derived from "
                         "the same coarse mesh as required."));
+    Assert ((dynamic_cast<const parallel::distributed::Triangulation<dim,spacedim>*>(&triangulation_1) == 0)
+            &&
+            (dynamic_cast<const parallel::distributed::Triangulation<dim,spacedim>*>(&triangulation_2) == 0),
+            ExcMessage ("The source triangulations for this function must both "
+                        "be available entirely locally, and not be distributed "
+                        "triangulations."));
 
     // first copy triangulation_1, and
     // then do as many iterations as
@@ -3434,6 +3440,51 @@ namespace GridGenerator
         else
           result.execute_coarsening_and_refinement();
       }
+  }
+
+
+
+  template <int dim, int spacedim>
+  void
+  create_triangulation_with_removed_cells (const Triangulation<dim, spacedim> &input_triangulation,
+                                           const std::set<typename Triangulation<dim, spacedim>::active_cell_iterator> &cells_to_remove,
+                                           Triangulation<dim, spacedim>       &result)
+  {
+    // simply copy the vertices; we will later strip those
+    // that turn out to be unused
+    std::vector<Point<spacedim> > vertices = input_triangulation.get_vertices();
+
+    // the loop through the cells and copy stuff, excluding
+    // the ones we are to remove
+    std::vector<CellData<dim> > cells;
+    for (typename Triangulation<dim,spacedim>::active_cell_iterator
+         cell = input_triangulation.begin_active(); cell != input_triangulation.end(); ++cell)
+      if (cells_to_remove.find(cell) == cells_to_remove.end())
+        {
+          Assert (static_cast<unsigned int>(cell->level()) == input_triangulation.n_levels()-1,
+                  ExcMessage ("Your input triangulation appears to have "
+                              "adaptively refined cells. This is not allowed. You can "
+                              "only call this function on a triangulation in which "
+                              "all cells are on the same refinement level."));
+
+          CellData<dim> this_cell;
+          for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_cell; ++v)
+            this_cell.vertices[v] = cell->vertex_index(v);
+          this_cell.material_id = cell->material_id();
+          cells.push_back (this_cell);
+        }
+
+    // throw out duplicated vertices from the two meshes, reorder vertices as
+    // necessary and create the triangulation
+    SubCellData subcell_data;
+    std::vector<unsigned int> considered_vertices;
+    GridTools::delete_duplicated_vertices (vertices, cells,
+                                           subcell_data,
+                                           considered_vertices);
+
+    // then clear the old triangulation and create the new one
+    result.clear ();
+    result.create_triangulation (vertices, cells, subcell_data);
   }
 
 
