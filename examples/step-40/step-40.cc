@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------------------
  *
- * Copyright (C) 2009 - 2014 by the deal.II authors
+ * Copyright (C) 2009 - 2015 by the deal.II authors
  *
  * This file is part of the deal.II library.
  *
@@ -168,9 +168,9 @@ namespace Step40
 
     ConstraintMatrix                          constraints;
 
-    LA::MPI::SparseMatrix system_matrix;
-    LA::MPI::Vector locally_relevant_solution;
-    LA::MPI::Vector system_rhs;
+    LA::MPI::SparseMatrix                     system_matrix;
+    LA::MPI::Vector                           locally_relevant_solution;
+    LA::MPI::Vector                           system_rhs;
 
     ConditionalOStream                        pcout;
     TimerOutput                               computing_timer;
@@ -419,6 +419,11 @@ namespace Step40
                                                   system_rhs);
         }
 
+    // Notice that the assembling above is just a local operation. So, to
+    // form the "global" linear system, a synchronization between all
+    // processors is needed. This could be done by invoking the function
+    // compress(). See @ref GlossCompress  "Compressing distributed objects"
+    // for more information on what is compress() designed to do.
     system_matrix.compress (VectorOperation::add);
     system_rhs.compress (VectorOperation::add);
   }
@@ -462,7 +467,12 @@ namespace Step40
 
     SolverControl solver_control (dof_handler.n_dofs(), 1e-12);
 
+#ifdef USE_PETSC_LA
     LA::SolverCG solver(solver_control, mpi_communicator);
+#else
+    LA::SolverCG solver(solver_control);
+#endif
+
     LA::MPI::PreconditionAMG preconditioner;
 
     LA::MPI::PreconditionAMG::AdditionalData data;
@@ -568,7 +578,7 @@ namespace Step40
     data_out.build_patches ();
 
     // The next step is to write this data to disk. We choose file names of
-    // the form <code>solution-XX-PPPP.vtu</code> where <code>XX</code>
+    // the form <code>solution-XX.PPPP.vtu</code> where <code>XX</code>
     // indicates the refinement cycle, <code>PPPP</code> refers to the
     // processor number (enough for up to 10,000 processors, though we hope
     // that nobody ever tries to generate this much data -- you would likely
@@ -601,7 +611,9 @@ namespace Step40
                                Utilities::int_to_string (i, 4) +
                                ".vtu");
 
-        std::ofstream master_output ((filename + ".pvtu").c_str());
+        std::ofstream master_output (("solution-" +
+                                      Utilities::int_to_string (cycle, 2) +
+                                      ".pvtu").c_str());
         data_out.write_pvtu_record (master_output, filenames);
       }
   }

@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 1999 - 2014 by the deal.II authors
+// Copyright (C) 1999 - 2015 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -13,8 +13,8 @@
 //
 // ---------------------------------------------------------------------
 
-#ifndef __deal2__table_handler_h
-#define __deal2__table_handler_h
+#ifndef dealii__table_handler_h
+#define dealii__table_handler_h
 
 
 #include <deal.II/base/config.h>
@@ -298,7 +298,7 @@ public:
    * - <code>simple_table_with_separate_column_description</code>: This format
    * is very similar to <code>table_with_separate_column_description</code>,
    * but it skips aligning the columns with additional white space. This
-   * increases the performance o fwrite_text() for large tables. Example
+   * increases the performance of write_text() for large tables. Example
    * output:
    *   @code
    *     # 1: key1
@@ -469,16 +469,16 @@ public:
   void clear ();
 
   /**
-  * Remove all values added at the current row. This is useful when,
-  * for example, a time-step is rejected and all data recorded about
-  * it needs to be discarded.
-  */
+   * Remove all values added at the current row. This is useful when, for
+   * example, a time-step is rejected and all data recorded about it needs to
+   * be discarded.
+   */
   void clear_current_row ();
 
   /**
-  * Read or write the data of this object to or from a stream for the purpose
-  * of serialization.
-  */
+   * Read or write the data of this object to or from a stream for the purpose
+   * of serialization.
+   */
   template <class Archive>
   void serialize(Archive &ar, const unsigned int version);
 
@@ -521,7 +521,9 @@ public:
    */
   DeclException1 (ExcUndefinedTexFormat,
                   std::string,
-                  << "<" << arg1 << "> is not a tex column format. Use l,c,r.");
+                  << "<" << arg1 << "> is not a tex column format. Use "
+                  << "'l', 'c', or 'r' to indicate left, centered, or "
+                  << "right aligned text.");
   //@}
 protected:
 
@@ -532,7 +534,7 @@ protected:
   struct Column
   {
     /**
-     * Constructor needed by STL maps.
+     * Constructor needed by <tt>std::map</tt>.
      */
     Column ();
 
@@ -836,7 +838,7 @@ void TableHandler::add_value (const std::string &key,
 
 template <class Archive>
 void
-TableHandler::Column::save(Archive &ar, const unsigned int version) const
+TableHandler::Column::save(Archive &ar, const unsigned int /*version*/) const
 {
   ar &entries &tex_caption
   & tex_format &precision
@@ -847,7 +849,7 @@ TableHandler::Column::save(Archive &ar, const unsigned int version) const
 
 template<class Archive>
 void
-TableHandler::Column::load(Archive &ar, const unsigned int version)
+TableHandler::Column::load(Archive &ar, const unsigned int /*version*/)
 {
   ar &entries &tex_caption
   & tex_format &precision

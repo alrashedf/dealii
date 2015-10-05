@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2000 - 2014 by the deal.II authors
+// Copyright (C) 2000 - 2015 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -13,8 +13,8 @@
 //
 // ---------------------------------------------------------------------
 
-#ifndef __deal2__block_sparsity_pattern_h
-#define __deal2__block_sparsity_pattern_h
+#ifndef dealii__block_sparsity_pattern_h
+#define dealii__block_sparsity_pattern_h
 
 
 #include <deal.II/base/config.h>
@@ -57,10 +57,10 @@ namespace TrilinosWrappers
  * patterns.
  *
  * The largest difference between the SparsityPattern and
- * DynamicSparsityPattern classes and this class is that mostly, the
- * matrices have different properties and you will want to work on the blocks
- * making up the matrix rather than the whole matrix. You can access the
- * different blocks using the <tt>block(row,col)</tt> function.
+ * DynamicSparsityPattern classes and this class is that mostly, the matrices
+ * have different properties and you will want to work on the blocks making up
+ * the matrix rather than the whole matrix. You can access the different
+ * blocks using the <tt>block(row,col)</tt> function.
  *
  * Attention: this object is not automatically notified if the size of one of
  * its subobjects' size is changed. After you initialize the sizes of the
@@ -128,9 +128,9 @@ public:
 
   /**
    * Resize the matrix, by setting the number of block rows and columns. This
-   * deletes all blocks and replaces them by unitialized ones, i.e. ones for
-   * which also the sizes are not yet set. You have to do that by calling the
-   * reinit() functions of the blocks themselves. Do not forget to call
+   * deletes all blocks and replaces them with uninitialized ones, i.e. ones
+   * for which also the sizes are not yet set. You have to do that by calling
+   * the reinit() functions of the blocks themselves. Do not forget to call
    * collect_sizes() after that on this object.
    *
    * The reason that you have to set sizes of the blocks yourself is that the
@@ -441,12 +441,11 @@ public:
   std::size_t memory_consumption () const;
 
   /**
-   * Copy data from an object of type BlockDynamicSparsityPattern, i.e.
-   * resize this object to the size of the given argument, and copy over the
-   * contents of each of the subobjects. Previous content of this object is
-   * lost.
+   * Copy data from an object of type BlockDynamicSparsityPattern, i.e. resize
+   * this object to the size of the given argument, and copy over the contents
+   * of each of the subobjects. Previous content of this object is lost.
    */
-  void copy_from (const BlockDynamicSparsityPattern &csp);
+  void copy_from (const BlockDynamicSparsityPattern &dsp);
 };
 
 
@@ -654,8 +653,10 @@ namespace TrilinosWrappers
      * the degrees of freedom on the individual block.  This function is
      * equivalent to calling the second constructor with the length of the
      * mapping vector and then entering the index values.
+     *
+     * @deprecated Use the respective method with IndexSet arguments instead.
      */
-    BlockSparsityPattern (const std::vector<Epetra_Map> &parallel_partitioning);
+    BlockSparsityPattern (const std::vector<Epetra_Map> &parallel_partitioning) DEAL_II_DEPRECATED;
 
     /**
      * Initialize the pattern with an array of index sets that specifies both
@@ -699,8 +700,10 @@ namespace TrilinosWrappers
      * Resize the matrix to a square tensor product of matrices with parallel
      * distribution according to the specifications in the array of
      * Epetra_Maps.
+     *
+     * @deprecated Use the respective method with IndexSet arguments instead.
      */
-    void reinit (const std::vector<Epetra_Map> &parallel_partitioning);
+    void reinit (const std::vector<Epetra_Map> &parallel_partitioning) DEAL_II_DEPRECATED;
 
     /**
      * Resize the matrix to a square tensor product of matrices. See the

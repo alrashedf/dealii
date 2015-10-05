@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2000 - 2014 by the deal.II authors
+// Copyright (C) 2000 - 2015 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -49,6 +49,7 @@ BlockSparsityPatternBase (const BlockSparsityPatternBase &s)
   :
   Subscriptor ()
 {
+  (void)s;
   Assert(s.rows==0, ExcInvalidConstructorCall());
   Assert(s.columns==0, ExcInvalidConstructorCall());
 
@@ -320,29 +321,6 @@ BlockSparsityPatternBase<SparsityPatternBase>::print_gnuplot(std::ostream &out) 
 
 
 
-
-// Remark: The following explicit instantiations needed to be moved to
-// this place here to work around a problem with gcc3.3 on Apple MacOSX.
-// The reason is that some of the functions instantiated here are used
-// further down; if they are not explicitly instantiated here, then the
-// compiler will do an implicit instantiation and give it internal linkage
-// (despite the later explicit instantiation that should make sure it
-// gets external linkage). To make sure the functions have external
-// linkage, we need to place the explicit instantiation before the first
-// use.
-//
-// For more information, see http://gcc.gnu.org/bugzilla/show_bug.cgi?id=24331
-// +++++++++++++
-
-
-template class BlockSparsityPatternBase<SparsityPattern>;
-template class BlockSparsityPatternBase<DynamicSparsityPattern>;
-#ifdef DEAL_II_WITH_TRILINOS
-template class BlockSparsityPatternBase<TrilinosWrappers::SparsityPattern>;
-#endif
-
-
-
 BlockSparsityPattern::BlockSparsityPattern ()
 {}
 
@@ -419,16 +397,16 @@ BlockSparsityPattern::memory_consumption () const
 
 
 void
-BlockSparsityPattern::copy_from  (const BlockDynamicSparsityPattern &csp)
+BlockSparsityPattern::copy_from  (const BlockDynamicSparsityPattern &dsp)
 {
   // delete old content, set block
   // sizes anew
-  reinit (csp.n_block_rows(), csp.n_block_cols());
+  reinit (dsp.n_block_rows(), dsp.n_block_cols());
 
   // copy over blocks
   for (size_type i=0; i<n_block_rows(); ++i)
     for (size_type j=0; j<n_block_cols(); ++j)
-      block(i,j).copy_from (csp.block(i,j));
+      block(i,j).copy_from (dsp.block(i,j));
 
   // and finally enquire their new
   // sizes
@@ -708,9 +686,10 @@ namespace TrilinosWrappers
 
 #endif
 
-// Remark: The explicit instantiations for "BlockSparsityPatternBase" were moved
-// to the top of this source file. The reason is a slightly buggy version
-// of the Apple gcc v.3.3.
-// For more information, see http://gcc.gnu.org/bugzilla/show_bug.cgi?id=24331
+template class BlockSparsityPatternBase<SparsityPattern>;
+template class BlockSparsityPatternBase<DynamicSparsityPattern>;
+#ifdef DEAL_II_WITH_TRILINOS
+template class BlockSparsityPatternBase<TrilinosWrappers::SparsityPattern>;
+#endif
 
 DEAL_II_NAMESPACE_CLOSE

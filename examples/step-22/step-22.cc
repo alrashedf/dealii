@@ -645,7 +645,7 @@ namespace Step22
               {
                 for (unsigned int j=0; j<=i; ++j)
                   {
-                    local_matrix(i,j) += (symgrad_phi_u[i] * symgrad_phi_u[j]
+                    local_matrix(i,j) += (2 * (symgrad_phi_u[i] * symgrad_phi_u[j])
                                           - div_phi_u[i] * phi_p[j]
                                           - phi_p[i] * div_phi_u[j]
                                           + phi_p[i] * phi_p[j])
@@ -954,7 +954,7 @@ namespace Step22
          cell != triangulation.end(); ++cell)
       for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
         if (cell->face(f)->center()[dim-1] == 0)
-          cell->face(f)->set_all_boundary_indicators(1);
+          cell->face(f)->set_all_boundary_ids(1);
 
 
     // We then apply an initial refinement before solving for the first

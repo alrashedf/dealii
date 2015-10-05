@@ -1543,7 +1543,7 @@ namespace Step44
           if (cell->face(face)->center()[0] < 0.5 * parameters.scale
               &&
               cell->face(face)->center()[1] < 0.5 * parameters.scale)
-            cell->face(face)->set_boundary_indicator(6);
+            cell->face(face)->set_boundary_id(6);
   }
 
 
@@ -2372,7 +2372,7 @@ namespace Step44
     for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell;
          ++face)
       if (cell->face(face)->at_boundary() == true
-          && cell->face(face)->boundary_indicator() == 6)
+          && cell->face(face)->boundary_id() == 6)
         {
           scratch.fe_face_values_ref.reinit(cell, face);
 
@@ -2663,7 +2663,8 @@ namespace Step44
       //      \mathsf{\mathbf{K}}^{-1}_{\widetilde{p} \widetilde{J}}
       //      \mathsf{\mathbf{F}}_{\widetilde{p}}
       //      $
-      A.block(J_dof).equ(1.0, system_rhs.block(J_dof), -1.0, B.block(J_dof));
+      A.block(J_dof) = system_rhs.block(J_dof);
+      A.block(J_dof) -= B.block(J_dof);
       //      $
       //      \mathsf{\mathbf{A}}_{\widetilde{J}}
       //      =
@@ -3150,7 +3151,7 @@ namespace Step44
     Vector<double> soln(solution_n.size());
     for (unsigned int i = 0; i < soln.size(); ++i)
       soln(i) = solution_n(i);
-    MappingQEulerian<dim> q_mapping(degree, soln, dof_handler_ref);
+    MappingQEulerian<dim> q_mapping(degree, dof_handler_ref, soln);
     data_out.build_patches(q_mapping, degree);
 
     std::ostringstream filename;

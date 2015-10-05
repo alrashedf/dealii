@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------------------
  *
- * Copyright (C) 2006 - 2014 by the deal.II authors
+ * Copyright (C) 2006 - 2015 by the deal.II authors
  *
  * This file is part of the deal.II library.
  *
@@ -38,7 +38,7 @@
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_iterator.h>
-#include <deal.II/grid/tria_boundary_lib.h>
+#include <deal.II/grid/manifold_lib.h>
 
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_accessor.h>
@@ -54,8 +54,8 @@
 #include <fstream>
 #include <iostream>
 
-// This is the only new one: We will need a library function defined in a
-// class GridTools that computes the minimal cell diameter.
+// This is the only new one: We will need a library function defined in the
+// namespace GridTools that computes the minimal cell diameter.
 #include <deal.II/grid/grid_tools.h>
 
 // The last step is as in all previous programs:
@@ -271,8 +271,9 @@ namespace Step24
   {
     const Point<dim> center;
     GridGenerator::hyper_ball (triangulation, center, 1.);
-    static const HyperBallBoundary<dim> boundary_description (center, 1.);
-    triangulation.set_boundary (0,boundary_description);
+    static const SphericalManifold<dim> boundary_description (center);
+    triangulation.set_all_manifold_ids_on_boundary(0);
+    triangulation.set_manifold (0,boundary_description);
     triangulation.refine_global (7);
 
     time_step = GridTools::minimal_cell_diameter(triangulation) /
